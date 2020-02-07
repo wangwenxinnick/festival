@@ -1,0 +1,369 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { padding: 0; margin: 0; overflow: hidden; background-color: #000;
+            }
+            canvas { padding: 0; margin: 0; }
+            footer{
+                text-align:center;
+            }
+            footer h2{
+            color:#FFFF00;
+            font-size:12px;
+            }
+ 
+        </style>
+        <script type="text/javascript">
+            var PI = Math.PI;
+            var PI_2 = PI * 2;
+ 
+ 
+            var defaultConfig = {
+                duration: 2000,
+                // ms
+                delay: 0,
+                // ms
+                radius: 5,
+                // px
+                amount: 100,
+                // particle number
+                speed: 12,
+                gravity: 0.05,
+                friction: 0.96,
+                reduction: 0.98,
+                left: 0.5,
+                top: 0.3,
+                color: "#ff0000"
+            };
+ 
+ 
+            window.addEventListener("load",
+            function() {
+                try{
+                    Canvas.canvas = document.querySelector("canvas");
+                    Canvas.canvas.width = document.documentElement.clientWidth;
+                    Canvas.canvas.height = document.documentElement.clientHeight - 40;
+                    Canvas.context = Canvas.canvas.getContext("2d");
+                    Canvas.context.fillStyle = "rgba(0, 0, 0, 0.05)";
+                }catch(e){
+                    document.querySelector("h2").text = "您的浏览器暂不支持，请升级后观看！";
+                }
+                //setInterval(exupdate, 1000 / 60);
+                var num = 20;
+                for (var i = 0; i < num; i++) {
+                    Canvas.add(new Firework({
+                        duration: 800,
+                        delay: 50 * i,
+                        amount: 20,
+                        left: 1 / num * i,
+                        top: 0.3,
+                        gravity: 0.5,
+                        reduction: 1,
+                        radius: 2,
+                        friction: 0.9,
+                        speed: 15,
+                        color: "#ff6"
+                    }));
+                }
+ 
+                Canvas.start();
+            },
+            false);
+ 
+            function Firework(config) {
+                this.setConfig(config || {});
+                this.particleImage = createParticleImage(this.radius, this.color);
+                this.diameter = this.radius * 2;
+                this.isActive = true;
+                this.fadeoutOpacity = 1;
+            }
+ 
+            Firework.prototype = {
+                setConfig: function(config) {
+                    for (var key in defaultConfig) {
+                        if (config[key] === undefined) {
+                            this[key] = defaultConfig[key];
+                        } else {
+                            this[key] = config[key];
+                        }
+                    }
+                },
+ 
+                initParticles: function() {
+                    this.particles = [];
+                    var x = this.canvas.width * this.left;
+                    var y = this.canvas.height * this.top;
+                    var maxSpeed = (this.speed / 2) * (this.speed / 2);
+ 
+                    while (this.particles.length < this.amount) {
+                        var vx = (Math.random() - 0.5) * this.speed;
+                        var vy = (Math.random() - 0.5) * this.speed;
+                        if (vx * vx + vy * vy <= maxSpeed) {
+                            this.particles.push(new Particle(x, y, vx, vy));
+                        }
+                    }
+                },
+ 
+                update: function(passed) {
+                    if (this.isActive === false || this.started(passed) === false) return;
+ 
+                    if (this.ended(passed)) {
+                        this.fadeout();
+                        return;
+                    }
+                    this.move();
+                    this.render();
+                },
+ 
+                move: function() {
+                    var particles = this.particles;
+                    var particle;
+                    for (var i = 0,
+                    len = particles.length; i < len; i++) {
+                        particle = particles[i];
+                        particle.vx *= this.friction;
+                        particle.vy = particle.vy * this.friction + this.gravity;
+                        particle.x += particle.vx;
+                        particle.y += particle.vy;
+                    }
+                },
+ 
+                render: function() {
+                    this.context.globalAlpha = 1;
+                    this.renderParticles();
+                },
+ 
+                renderParticles: function() {
+                    var diameter = this.diameter *= this.reduction;
+                    var context = this.context;
+                    var particles = this.particles;
+                    var particleImage = this.particleImage;
+                    var p;
+                    for (var i = 0,
+                    len = particles.length; i < len; i++) {
+                        p = particles[i];
+                        context.drawImage(particleImage, p.x, p.y, diameter, diameter);
+                    }
+                },
+ 
+                started: function(passed) {
+                    return this.delay < passed;
+                },
+ 
+                ended: function(passed) {
+                    return this.duration + this.delay < passed;
+                },
+ 
+                fadeout: function() {
+                    this.fadeoutOpacity -= 0.1;
+                    if (this.fadeoutOpacity <= 0) {
+                        this.isActive = false;
+                        return;
+                    }
+                    this.move();
+                    this.context.globalAlpha = this.fadeoutOpacity;
+                    this.renderParticles();
+                }
+            };
+ 
+            function Particle(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+            }
+ 
+            var Canvas = {
+                fireworks: [],
+ 
+                add: function(firework) {
+                    firework.canvas = this.canvas;
+                    firework.context = this.context;
+                    firework.initParticles();
+                    this.fireworks.push(firework);
+                },
+ 
+                start: function() {
+                    this.startTime = Number(new Date());
+                    this.update();
+                },
+ 
+                fill: function() {
+                    this.context.globalAlpha = 1;
+                    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+ 
+                // main loop
+                update: function() {
+                    this.fill();
+                    var passed = new Date() - this.startTime;
+                    var activeFireworkCount = 0;
+                    this.fireworks.forEach(function(firework) {
+                        if (firework.isActive) {
+                            firework.update(passed);
+                            activeFireworkCount++;
+                        }
+                    }.bind(this));
+ 
+                    if (0 < activeFireworkCount) {
+                        requestAnimationFrame(this.update.bind(this));
+                    } else {
+                        requestAnimationFrame(this.fadeout.bind(this, 20));
+                    }
+                },
+ 
+                fadeout: function(count) {
+                    if (count < 0) {
+                        this.context.fillStyle = "black";
+                        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                        drawText();
+                        return; // animation end
+                         
+                    }
+                    this.context.globalAlpha = 1;
+                    this.context.fillStyle = "rgba(0, 0, 0, 0.15)";
+                    this.fill();
+                    requestAnimationFrame(this.fadeout.bind(this, count - 1));
+                }
+            };
+            function drawText(){
+                setInterval(exupdate, 1000 / 60);
+            }
+ 
+            if (Function.prototype.bind === undefined) {
+                Function.prototype.bind = function(obj) {
+                    var slice = [].slice,
+                    args = slice.call(arguments, 1),
+                    self = this,
+                    bound = function() {
+                        return self.apply(obj || window, args.concat(slice.call(arguments)));
+                    };
+                    bound.prototype = this.prototype;
+                    return bound;
+                };
+            }
+ 
+            function createParticleImage(radius, color) {
+                var size = radius * 2;
+                var canvas = document.createElement("canvas");
+                canvas.width = canvas.height = size;
+                var context = canvas.getContext("2d");
+ 
+                var gradient = context.createRadialGradient(radius, radius, 0, radius, radius, size);
+                gradient.addColorStop(0, "white");
+                gradient.addColorStop(0.1, "white");
+                gradient.addColorStop(0.3, color);
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+ 
+                context.fillStyle = gradient;
+                context.beginPath();
+                context.arc(radius, radius, radius, 0, PI_2, true);
+                context.fill();
+ 
+                var particle = new Image();
+                particle.src = canvas.toDataURL();
+                return particle;
+            }
+             
+ 
+            (function(w, r) {
+                w['r' + r] = w['r' + r] || w['webkitR' + r] || w['mozR' + r] || w['msR' + r] || w['oR' + r] ||
+                function(c) {
+                    w.setTimeout(c, 1000 / 60);
+                };
+            })(window, 'equestAnimationFrame');
+             
+             
+             
+             function exupdate() {
+                var canvas = document.getElementById("firework");
+                var cxt = canvas.getContext("2d");
+                var width = document.documentElement.clientWidth;
+                var height = document.documentElement.clientHeight;
+                if (Math.random() < 0.1) {
+                    explode(Math.random() * width, Math.random() * height, randomColor());
+               }
+                
+                cxt.clearRect(0, 0, width, height);
+                for (var i = particles.length - 1; i >= 0; i--) {
+                    var p = particles[i];
+ 
+                    p.vx *= p.deceleration;
+                    p.vy *= p.deceleration;
+                    p.vy += p.gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.energy *= p.deceleration;
+                    p.a = Math.atan2(p.vy, p.vx);
+                    p.tx = p.x + p.length * Math.cos(p.a);
+                    p.ty = p.y + p.length * Math.sin(p.a);
+ 
+                    if (p.energy < 0.05) {
+                        particles.splice(i, 1);
+                    } else {
+                        cxt.beginPath();
+                        cxt.fillStyle = p.color;
+                        cxt.fillRect(p.x, p.y, p.tx - p.x, p.ty - p.y);
+                        cxt.fill();
+                        cxt.stroke();
+                        cxt.closePath();
+                    }
+                }
+                var x = parseInt(width)/2;
+                var y = parseInt(height)/2
+                cxt.font = "60px 宋体 bold";
+                cxt.textAlign = 'center';
+                cxt.fillStyle = colors[parseInt(cIndex)%25];
+                cxt.fillText('祝萌萌元宵节快乐！', x, y, 400);
+                if(timeTick >10){
+                    cIndex = parseInt(cIndex) + 1;
+                    timeTick = 0;
+                }
+                timeTick = parseInt(timeTick) + 1;
+            }
+            var colors = ["#fff","#ccc","#ff0000","#00ff00","#0000ff","#00ffff","#ffff00","#FF7F00","#FF1493","#9B30FF","#9AFF9A",
+                          "#FFC1C1","#FFE1FF","#8B7B8B","#8B6969","#548B54","#551A8B","#8B0A50","#8B4500","#8b8b00","#008b8b","#00008b",
+                          "#008b00","#8b0000","#666","#000"];
+            var cIndex = 0;
+            var timeTick = 0;
+            var particles = [];
+            function explode(x, y, color) {
+                //document.getElementById("showInfo").innerHTML = color;
+                var c = 400;
+                while (c-- >0 ) {
+                    var p = {};
+                    p.energy = Math.random() * 5;
+                    var angle = Math.random() * Math.PI * 2;
+                    var v = Math.random() * 10;
+                    p.vx = Math.cos(angle) * v;
+                    p.vy = Math.sin(angle) * v;
+                    p.x = x;
+                    p.y = y;
+                    p.color = color;
+ 
+                    p.deceleration = 0.95;
+                    p.gravity = 0.05;
+                    p.length = 4;
+                    particles.push(p);
+                }
+            }
+ 
+            function randomColor() {
+                return "#" + parseInt(Math.random()*9) + "" + parseInt(Math.random()*9) + ""
+                            + parseInt(Math.random()*9) + "" + parseInt(Math.random()*9) + ""
+                            + parseInt(Math.random()*9) + "" + parseInt(Math.random()*9);
+            }
+        </script>
+    </head>
+     
+    <body>
+        <canvas id="firework">
+           
+        </canvas>
+          
+     
+    </body>
+ 
+</html>
