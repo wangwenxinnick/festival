@@ -1,37 +1,36 @@
-<!DOCTYPE html>
-<html lang="en" >
-<head>
-<meta charset="UTF-8">
-<title>可爱的萌萌</title>
-<meta content="width=device-width, initial-scale=0.7, maximum-scale=1.0, user-scalable=0;" name="viewport" />
-<link rel="stylesheet" href="css/style.css">
-
-</head>
-<body>
-
-<div class='container'>
-  <div id='l-ball' class='ball'>
-    <div class='face face-l'>
-      <div class='eye eye-l'></div>
-      <div class='eye eye-r'></div>
-      <div class='mouth'></div>
-    </div>
-  </div><div id='r-ball' class='ball'>
-    <div class='face face-r'>
-      <div class='eye eye-l eye-r-p'></div>
-      <div class='eye eye-r eye-r-p'></div>
-      <div class='mouth mouth-r'></div>
-      <div class='kiss-m'>
-        <div class='kiss'></div>
-        <div class='kiss'></div>
-      </div>
-    </div>
-  </div>
-  <div style="text-align:center">
-  <a href="firework.html" style="text-decoration:none; color:#F00; text-align:center" href="">点击这里有惊喜</a>
-  </div>
-</div>
-
-  
-</body>
+<html>
+    <head>
+        <title>Nick and Mengmeng</title>
+        <style>
+            #Nick{display: block;}
+            #Mengmeng{display: block;}
+        </style>
+    </head>
+    <body>
+        <div id="Nick">
+            <p>Can I say hello to the world?</p>
+            <button onclick="mystery()">
+                Try it!
+            </button>
+            <script language="javascript">
+                function mystery() 
+                {
+                    alert("Sorry, you can't say hello to the world without Mengmeng");
+                }
+            </script>
+        </div>
+        <!--welcome Mengmeng-->
+        <div id="Mengmeng Nick">
+            <p>Can I say hello to the world with Mengmeng?</p>
+            <button onclick="welcome_Mengmeng()">
+                Not sure? Try it!
+            </button>
+            <script language="javascript">
+                function welcome_Mengmeng() 
+                {
+                    alert("Hello World, hope you and Mengmeng are doing well!");//Yes, you did it, congratulaions!
+                }
+            </script>
+        </div>
+    </body>
 </html>
